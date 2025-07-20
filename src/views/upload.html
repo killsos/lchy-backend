@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>CSV文件上传</title>
+    <style>
+        body {
+            background: #f5f6fa;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .upload-card {
+            background: #fff;
+            padding: 32px 40px 24px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            min-width: 380px;
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 24px;
+            color: #222f3e;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .custom-file-label {
+            display: inline-block;
+            background: #4f8cff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 28px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 20px;
+        }
+        .custom-file-label:hover {
+            background: #2563eb;
+        }
+        .file-name {
+            margin-left: 12px;
+            font-size: 14px;
+            color: #4f8cff;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            background: #f0f6ff;
+            border-radius: 6px;
+            padding: 4px 14px 4px 8px;
+            box-shadow: 0 1px 4px rgba(79,140,255,0.07);
+            transition: background 0.2s;
+        }
+        .file-name svg {
+            margin-right: 6px;
+        }
+        button {
+            background: #4f8cff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 28px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 15px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+        #file-name-text {
+            font-size: 12px;
+        }
+        .progress-container {
+            margin: 20px 0;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #4f8cff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #64748b;
+        }
+        .result-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            text-align: left;
+            white-space: pre-line;
+            line-height: 1.5;
+            max-width: 100%;
+            word-wrap: break-word;
+            font-size: 14px;
+        }
+        .result-success {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .result-error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        .result-warning {
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-card">
+        <h2>上传CSV文件</h2>
+        <div id="upload-form">
+            <label class="custom-file-label">
+                选择CSV文件
+                <input type="file" id="csv-file" accept=".csv" required onchange="showFileName(event)">
+            </label>
+            <span class="file-name" id="file-name">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none" style="vertical-align: middle; margin-right: 6px;"><path d="M4 2.5A1.5 1.5 0 0 0 2.5 4v12A1.5 1.5 0 0 0 4 17.5h12a1.5 1.5 0 0 0 1.5-1.5V7.914a1.5 1.5 0 0 0-.44-1.06l-4.914-4.914A1.5 1.5 0 0 0 12.086 2.5H4Z" stroke="#4f8cff" stroke-width="1.2" fill="#eaf1ff"/><path d="M13 2.5v4a1 1 0 0 0 1 1h4" stroke="#4f8cff" stroke-width="1.2"/></svg>
+                <span id="file-name-text">请先选择要上传的CSV文件</span>
+            </span><br>
+            <button type="button" id="upload-btn" onclick="uploadFile()" disabled>上传文件</button>
+        </div>
+        
+        <!-- 进度条 -->
+        <div class="progress-container" id="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="progress-text" id="progress-text">上传中... 0%</div>
+        </div>
+        
+        <!-- 结果消息 -->
+        <div class="result-message" id="result-message"></div>
+    </div>
+
+    <!-- 引入 axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    
+    <script>
+        let selectedFile = null;
+
+        function showFileName(event) {
+            const input = event.target;
+            const uploadBtn = document.getElementById('upload-btn');
+            
+            if (input.files && input.files.length > 0) {
+                selectedFile = input.files[0];
+                const fileName = selectedFile.name;
+                document.getElementById('file-name-text').textContent = fileName;
+                
+                // 客户端文件验证
+                const validationResult = validateFile(selectedFile);
+                if (validationResult.valid) {
+                    uploadBtn.disabled = false;
+                    hideResult();
+                } else {
+                    uploadBtn.disabled = true;
+                    selectedFile = null;
+                    showResult(validationResult.message, validationResult.type || 'error');
+                }
+            } else {
+                document.getElementById('file-name-text').textContent = '请先选择要上传的CSV文件';
+                uploadBtn.disabled = true;
+                selectedFile = null;
+            }
+        }
+
+        function validateFile(file) {
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            const fileName = file.name.toLowerCase();
+            
+            // 检查文件类型
+            if (!fileName.endsWith('.csv')) {
+                return {
+                    valid: false,
+                    message: '❌ 文件格式错误\n\n请选择CSV格式的文件（.csv后缀）',
+                    type: 'error'
+                };
+            }
+            
+            // 检查文件大小
+            if (file.size > maxSize) {
+                return {
+                    valid: false,
+                    message: `❌ 文件过大\n\n当前文件大小：${(file.size / 1024 / 1024).toFixed(2)}MB\n最大支持：5MB\n\n💡 建议：请使用较小的CSV文件或分批上传`,
+                    type: 'error'
+                };
+            }
+            
+            // 检查文件是否为空
+            if (file.size === 0) {
+                return {
+                    valid: false,
+                    message: '❌ 文件为空\n\n请选择包含数据的有效CSV文件',
+                    type: 'error'
+                };
+            }
+            
+            // 检查文件大小是否过小（可能是无效文件）
+            if (file.size < 10) {
+                return {
+                    valid: false,
+                    message: '⚠️ 文件可能无效\n\n文件大小过小，请确认是否为有效的CSV文件',
+                    type: 'warning'
+                };
+            }
+            
+            return { valid: true };
+        }
+
+        function uploadFile() {
+            if (!selectedFile) {
+                showResult('请先选择要上传的文件', 'error');
+                return;
+            }
+
+            // 文件大小检查 (5MB)
+            const maxSize = 5 * 1024 * 1024;
+            if (selectedFile.size > maxSize) {
+                showResult('文件大小不能超过5MB，请选择较小的文件', 'error');
+                return;
+            }
+
+            // 文件内容初步检查
+            if (selectedFile.size === 0) {
+                showResult('选择的文件为空，请选择有效的CSV文件', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            const uploadBtn = document.getElementById('upload-btn');
+            const progressContainer = document.getElementById('progress-container');
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+
+            // 禁用上传按钮，显示进度条
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '上传中...';
+            progressContainer.style.display = 'block';
+            hideResult();
+
+            // 使用 axios 上传文件
+            axios.post('/upload/csv', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                },
+                onUploadProgress: function(progressEvent) {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    progressFill.style.width = percentCompleted + '%';
+                    progressText.textContent = `上传中... ${percentCompleted}%`;
+                }
+            })
+            .then(function(response) {
+                console.log('上传成功:', response.data);
+                
+                if (response.data.success) {
+                    const details = response.data.details;
+                    let message = `✅ 文件上传成功！`;
+                    
+                    if (details) {
+                        const csvRecords = details.csvRecords || 0;
+                        const insertedRecords = details.insertedRecords || 0;
+                        const validRecords = details.validRecords || csvRecords;
+                        
+                        message += `\n📊 数据统计：`;
+                        message += `\n• 解析记录：${csvRecords} 条`;
+                        if (validRecords !== csvRecords) {
+                            message += `\n• 有效记录：${validRecords} 条`;
+                        }
+                        message += `\n• 成功插入：${insertedRecords} 条`;
+                        
+                        if (insertedRecords < validRecords) {
+                            message += `\n\n⚠️ 部分数据可能因重复而被忽略`;
+                        }
+                    }
+                    
+                    showResult(message, 'success');
+                } else {
+                    showResult('❌ 上传失败：' + (response.data.error || '未知错误'), 'error');
+                }
+                
+                resetUploadState();
+            })
+            .catch(function(error) {
+                console.error('上传失败:', error);
+                
+                const friendlyError = getFriendlyErrorMessage(error);
+                showResult(friendlyError, 'error');
+                resetUploadState();
+            });
+        }
+
+        function getFriendlyErrorMessage(error) {
+            let message = '❌ 上传失败：';
+            
+            if (error.response) {
+                const status = error.response.status;
+                const data = error.response.data;
+                
+                switch (status) {
+                    case 400:
+                        if (data && data.error) {
+                            if (data.error.includes('未上传文件')) {
+                                message += '没有检测到文件，请重新选择文件';
+                            } else if (data.error.includes('CSV格式')) {
+                                message += '文件格式不正确，请确保上传的是.csv格式文件';
+                            } else if (data.error.includes('只允许上传CSV文件')) {
+                                message += '只支持CSV格式文件，请检查文件类型';
+                            } else if (data.error.includes('文件大小')) {
+                                message += '文件过大，请选择小于5MB的文件';
+                            } else {
+                                message += data.error;
+                            }
+                        } else {
+                            message += '请求参数错误，请检查文件格式';
+                        }
+                        break;
+                        
+                    case 413:
+                        message += '文件大小超出限制，请选择小于5MB的CSV文件';
+                        break;
+                        
+                    case 500:
+                        if (data && data.error) {
+                            if (data.error.includes('数据库连接失败')) {
+                                message += '数据库连接异常，请稍后重试或联系管理员';
+                            } else if (data.error.includes('解析CSV失败')) {
+                                message += 'CSV文件格式有误，请检查文件内容格式是否正确';
+                            } else if (data.error.includes('数据库插入失败')) {
+                                message += '数据保存失败，请检查数据格式或稍后重试';
+                            } else if (data.error.includes('没有有效的数据')) {
+                                message += 'CSV文件中没有找到有效数据，请检查文件内容';
+                            } else {
+                                message += '服务器处理异常：' + data.error;
+                            }
+                        } else {
+                            message += '服务器内部错误，请稍后重试';
+                        }
+                        break;
+                        
+                    case 502:
+                        message += '服务器网关错误，请稍后重试';
+                        break;
+                        
+                    case 503:
+                        message += '服务暂时不可用，请稍后重试';
+                        break;
+                        
+                    case 504:
+                        message += '服务器响应超时，文件可能过大或网络较慢';
+                        break;
+                        
+                    default:
+                        message += `服务器错误 (${status})，请稍后重试`;
+                }
+                
+                // 添加详细错误信息（如果有）
+                if (data && data.details && typeof data.details === 'string') {
+                    message += `\n\n🔍 详细信息：${data.details}`;
+                }
+                
+            } else if (error.request) {
+                if (error.code === 'ECONNABORTED') {
+                    message += '上传超时，请检查网络连接或尝试上传较小的文件';
+                } else if (error.code === 'NETWORK_ERROR') {
+                    message += '网络连接失败，请检查网络连接后重试';
+                } else {
+                    message += '网络连接异常，请检查网络后重试';
+                }
+            } else if (error.code === 'ERR_INVALID_RESPONSE') {
+                message += '服务器响应格式错误，请稍后重试';
+            } else {
+                message += error.message || '未知错误，请稍后重试';
+            }
+            
+            // 添加用户友好的建议
+            message += '\n\n💡 建议：';
+            if (error.response && error.response.status >= 500) {
+                message += '\n• 请稍后重试\n• 如问题持续存在，请联系技术支持';
+            } else if (error.response && error.response.status === 400) {
+                message += '\n• 检查CSV文件格式是否正确\n• 确保文件包含必需的数据列\n• 文件大小不超过5MB';
+            } else {
+                message += '\n• 检查网络连接\n• 尝试刷新页面后重新上传';
+            }
+            
+            return message;
+        }
+
+        function resetUploadState() {
+            const uploadBtn = document.getElementById('upload-btn');
+            const progressContainer = document.getElementById('progress-container');
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+
+            // 重置UI状态
+            setTimeout(() => {
+                uploadBtn.disabled = selectedFile ? false : true;
+                uploadBtn.textContent = '上传文件';
+                progressContainer.style.display = 'none';
+                progressFill.style.width = '0%';
+                progressText.textContent = '上传中... 0%';
+                
+                // 成功时清空文件选择，失败时保留文件便于重试
+                const resultElement = document.getElementById('result-message');
+                const isSuccess = resultElement.classList.contains('result-success');
+                
+                if (isSuccess) {
+                    document.getElementById('csv-file').value = '';
+                    document.getElementById('file-name-text').textContent = '请先选择要上传的CSV文件';
+                    selectedFile = null;
+                    uploadBtn.disabled = true;
+                }
+            }, 2000);
+        }
+
+        function showResult(message, type) {
+            const resultElement = document.getElementById('result-message');
+            resultElement.textContent = message;
+            resultElement.className = 'result-message result-' + type;
+            resultElement.style.display = 'block';
+        }
+
+        function hideResult() {
+            const resultElement = document.getElementById('result-message');
+            resultElement.style.display = 'none';
+        }
+
+        // 配置 axios 默认设置
+        axios.defaults.timeout = 30000; // 30秒超时
+        axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+    </script>
+</body>
+</html>

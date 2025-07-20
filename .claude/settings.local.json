@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm run build:*)",
+      "Bash(rm:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(docker-compose config:*)",
+      "Bash(cp:*)",
+      "Bash(docker build:*)",
+      "Bash(docker stop:*)",
+      "Bash(true)",
+      "Bash(docker rmi:*)",
+      "Bash(find:*)"
+    ],
+    "deny": []
+  }
+}

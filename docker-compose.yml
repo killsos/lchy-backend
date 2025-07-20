@@ -1,0 +1,127 @@
+services:
+  # MySQL数据库服务
+  mysql:
+    image: mysql:8.0
+    container_name: app-roi-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword123}
+      MYSQL_DATABASE: ${DB_NAME:-lchy}
+      MYSQL_USER: ${DB_USERNAME:-appuser}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-apppassword123}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword123}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Redis缓存服务（可选，为将来扩展准备）
+  redis:
+    image: redis:7-alpine
+    container_name: app-roi-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 应用服务
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: app-roi-backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3200}:3200"
+    environment:
+      NODE_ENV: production
+      PORT: 3200
+      
+      # 数据库配置
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: ${DB_USERNAME:-appuser}
+      DB_PASSWORD: ${DB_PASSWORD:-apppassword123}
+      DB_NAME: ${DB_NAME:-lchy}
+      
+      # 连接池配置
+      DB_POOL_MAX: ${DB_POOL_MAX:-20}
+      DB_POOL_MIN: ${DB_POOL_MIN:-5}
+      DB_POOL_ACQUIRE: ${DB_POOL_ACQUIRE:-60000}
+      DB_POOL_IDLE: ${DB_POOL_IDLE:-10000}
+      DB_POOL_EVICT: ${DB_POOL_EVICT:-1000}
+      DB_CONNECT_TIMEOUT: ${DB_CONNECT_TIMEOUT:-10000}
+      DB_QUERY_TIMEOUT: ${DB_QUERY_TIMEOUT:-30000}
+      
+      # 安全配置
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      
+      # 日志配置
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    networks:
+      - app-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3200/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Nginx反向代理（可选）
+  nginx:
+    image: nginx:alpine
+    container_name: app-roi-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/ssl:/etc/nginx/ssl:ro
+    networks:
+      - app-network
+    depends_on:
+      - app
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  app-network:
+    driver: bridge
+    name: app-roi-network
+
+volumes:
+  mysql_data:
+    name: app-roi-mysql-data
+  redis_data:
+    name: app-roi-redis-data
