@@ -4,7 +4,6 @@ dotenv.config();
 import app from './app';
 import logger from './utils/logger';
 import fs from 'fs';
-import path from 'path';
 import { getConnectionPoolService } from './services/connectionPoolService';
 
 const PORT = process.env.PORT || 3200;
