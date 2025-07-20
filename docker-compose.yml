@@ -10,7 +10,7 @@ services:
       MYSQL_USER: ${DB_USERNAME:-appuser}
       MYSQL_PASSWORD: ${DB_PASSWORD:-apppassword123}
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./docker/mysql/init:/docker-entrypoint-initdb.d
@@ -51,7 +51,7 @@ services:
     container_name: app-roi-backend
     restart: unless-stopped
     ports:
-      - "${PORT:-3200}:3200"
+      - "${PORT:-3201}:3200"
     environment:
       NODE_ENV: production
       PORT: 3200
