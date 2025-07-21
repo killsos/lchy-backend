@@ -3,7 +3,7 @@ import { DataInsertResult, CsvRowData, ProcessedRowData, AppRoiData as AppRoiDat
 import { Sequelize } from 'sequelize';
 
 // 使用 require 导入数据库模型
-const db = require('../models/index.js');
+const db = require('../../src/models/index.js');
 const AppRoiData = db.AppRoiData;
 
 export class AppRoiDataService {
