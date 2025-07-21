@@ -59,8 +59,8 @@ COPY --from=builder --chown=appuser:nodejs /app/dist ./dist
 # 复制其他必要文件（包括models和config）
 COPY --chown=appuser:nodejs package*.json ./
 COPY --from=builder --chown=appuser:nodejs /app/src/models ./dist/models
-COPY --from=builder --chown=appuser:nodejs /app/src/config ./dist/config
-COPY --from=builder --chown=appuser:nodejs /app/src/migrations ./dist/migrations
+COPY --from=builder --chown=appuser:nodejs /app/src/config ./src/config
+COPY --from=builder --chown=appuser:nodejs /app/src/migrations ./src/migrations
 
 # 创建日志和上传目录
 RUN mkdir -p logs uploads && \
