@@ -19,7 +19,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # 配置
-COMPOSE_FILE="docker-compose.prod.yml"
+COMPOSE_FILE="docker compose.prod.yml"
 ENV_FILE=".env"
 BACKUP_DIR="./backups"
 PROJECT_NAME="app-roi-tracker"
@@ -109,7 +109,7 @@ backup_database() {
 build_images() {
     log_info "开始构建 Docker 镜像..."
     
-    docker-compose -f "$COMPOSE_FILE" build --no-cache app
+    docker compose -f "$COMPOSE_FILE" build --no-cache app
     
     log_success "镜像构建完成"
 }
@@ -123,7 +123,7 @@ run_migrations() {
     sleep 30
     
     # 运行迁移
-    docker-compose -f "$COMPOSE_FILE" exec app npm run migrate
+    docker compose -f "$COMPOSE_FILE" exec app npm run migrate
     
     log_success "数据库迁移完成"
 }
@@ -134,23 +134,23 @@ deploy_application() {
     
     if [ "$FORCE_DEPLOY" = true ]; then
         log_warning "强制重新部署，停止并删除现有容器..."
-        docker-compose -f "$COMPOSE_FILE" down
+        docker compose -f "$COMPOSE_FILE" down
     fi
     
     # 启动服务
     log_info "启动服务..."
-    docker-compose -f "$COMPOSE_FILE" up -d
+    docker compose -f "$COMPOSE_FILE" up -d
     
     # 等待服务启动
     log_info "等待服务启动..."
     sleep 20
     
     # 检查服务状态
-    if docker-compose -f "$COMPOSE_FILE" ps | grep -q "Up"; then
+    if docker compose -f "$COMPOSE_FILE" ps | grep -q "Up"; then
         log_success "服务启动成功"
     else
         log_error "服务启动失败"
-        docker-compose -f "$COMPOSE_FILE" logs
+        docker compose -f "$COMPOSE_FILE" logs
         exit 1
     fi
 }
@@ -182,9 +182,9 @@ show_deployment_info() {
     echo "  健康检查: http://localhost:3200/health"
     echo ""
     echo "管理命令:"
-    echo "  查看日志: docker-compose -f $COMPOSE_FILE logs -f"
-    echo "  停止服务: docker-compose -f $COMPOSE_FILE down"
-    echo "  重启服务: docker-compose -f $COMPOSE_FILE restart"
+    echo "  查看日志: docker compose -f $COMPOSE_FILE logs -f"
+    echo "  停止服务: docker compose -f $COMPOSE_FILE down"
+    echo "  重启服务: docker compose -f $COMPOSE_FILE restart"
     echo ""
 }
 
@@ -192,7 +192,7 @@ show_deployment_info() {
 cleanup() {
     if [ $? -ne 0 ]; then
         log_error "部署过程中出现错误"
-        log_info "查看日志: docker-compose -f $COMPOSE_FILE logs"
+        log_info "查看日志: docker compose -f $COMPOSE_FILE logs"
     fi
 }
 
