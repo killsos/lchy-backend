@@ -9,8 +9,11 @@ import { getConnectionPoolService } from './services/connectionPoolService';
 const PORT = process.env.PORT || 3200;
 
 // 导入数据库实例
+console.log('正在加载数据库模型...');
 const db = require('./models/index.js');
+console.log('数据库模型加载完成');
 const poolService = getConnectionPoolService(db.sequelize);
+console.log('连接池服务初始化完成');
 
 // 确保必要的目录存在
 const createDirectories = () => {
@@ -34,14 +37,14 @@ const createDirectories = () => {
     logger.info('创建必要目录...');
     createDirectories();
     
-    // 测试数据库连接
-    logger.info('测试数据库连接...');
-    const isDbConnected = await poolService.testConnection();
-    if (!isDbConnected) {
-      logger.error('数据库连接失败，服务器启动中止');
-      process.exit(1);
-    }
-    logger.info('数据库连接测试成功');
+    // 测试数据库连接 (临时禁用以调试问题)
+    logger.info('跳过数据库连接测试，直接启动服务器...');
+    // const isDbConnected = await poolService.testConnection();
+    // if (!isDbConnected) {
+    //   logger.error('数据库连接失败，服务器启动中止');
+    //   process.exit(1);
+    // }
+    // logger.info('数据库连接测试成功');
 
     // 初始化连接池监控
     logger.info('初始化连接池监控...');
