@@ -25,21 +25,31 @@ const createDirectories = () => {
 
 (async () => {
   try {
+    logger.info('开始启动服务器...', {
+      port: PORT,
+      nodeEnv: process.env.NODE_ENV || 'development'
+    });
+
     // 创建必要目录
+    logger.info('创建必要目录...');
     createDirectories();
     
     // 测试数据库连接
+    logger.info('测试数据库连接...');
     const isDbConnected = await poolService.testConnection();
     if (!isDbConnected) {
       logger.error('数据库连接失败，服务器启动中止');
       process.exit(1);
     }
+    logger.info('数据库连接测试成功');
 
     // 初始化连接池监控
+    logger.info('初始化连接池监控...');
     poolService.initializePoolMonitoring();
     
     // 启动服务器
-    app.listen(PORT, () => {
+    logger.info('启动HTTP服务器...');
+    const server = app.listen(PORT, () => {
       logger.info(`服务器启动成功`, {
         port: PORT,
         nodeEnv: process.env.NODE_ENV || 'development',
@@ -47,10 +57,17 @@ const createDirectories = () => {
         connectionPool: poolService.getPoolStats()
       });
     });
+
+    // 监听服务器错误
+    server.on('error', (error: any) => {
+      logger.error('HTTP服务器错误', { error: error.message });
+      process.exit(1);
+    });
     
   } catch (error) {
     logger.error('服务器启动失败', {
-      error: error instanceof Error ? error.message : error
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined
     });
     process.exit(1);
   }
