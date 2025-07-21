@@ -19,13 +19,30 @@ const poolService = getConnectionPoolService(db.sequelize);
 // poolService.initializePoolMonitoring(); // 临时禁用
 console.log('连接池服务初始化完成');
 
-// 确保必要的目录存在
+// 确保必要的目录存在并设置正确权限
 const createDirectories = () => {
   const dirs = ['uploads', 'logs'];
   dirs.forEach(dir => {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-      logger.info(`创建目录: ${dir}`);
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
+        logger.info(`创建目录: ${dir}`);
+      }
+      
+      // 确保目录权限正确
+      fs.chmodSync(dir, 0o755);
+      
+      // 测试写入权限
+      const testFile = `${dir}/.write-test-${Date.now()}`;
+      fs.writeFileSync(testFile, 'test');
+      fs.unlinkSync(testFile);
+      
+      logger.info(`目录权限检查通过: ${dir}`);
+    } catch (error) {
+      logger.error(`目录权限设置失败: ${dir}`, { 
+        error: error instanceof Error ? error.message : error 
+      });
+      throw error;
     }
   });
 };

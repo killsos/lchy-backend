@@ -65,9 +65,10 @@ COPY --chown=appuser:nodejs .sequelizerc ./
 COPY --from=builder --chown=appuser:nodejs /app/src/views ./src/views
 COPY --from=builder --chown=appuser:nodejs /app/src/migrations ./src/migrations
 
-# 创建日志和上传目录
+# 创建日志和上传目录并设置权限
 RUN mkdir -p logs uploads && \
-    chown -R appuser:nodejs logs uploads
+    chown -R appuser:nodejs logs uploads && \
+    chmod -R 755 logs uploads
 
 # 切换到非root用户
 USER appuser

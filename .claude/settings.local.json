@@ -16,7 +16,21 @@
       "Bash(find:*)",
       "Bash(git commit:*)",
       "Bash(chmod:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(docker compose build:*)",
+      "Bash(docker compose:*)",
+      "Bash(lsof:*)",
+      "Bash(PORT=3201 docker compose up -d)",
+      "Bash(npm run dev:*)",
+      "Bash(npm:*)",
+      "Bash(ls:*)",
+      "Bash(NODE_ENV=development npx ts-node --transpile-only src/server.ts)",
+      "Bash(git push:*)",
+      "Bash(touch:*)",
+      "Bash(git rm:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker exec:*)"
     ],
     "deny": []
   }
