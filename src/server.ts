@@ -37,14 +37,37 @@ const createDirectories = () => {
     logger.info('创建必要目录...');
     createDirectories();
     
-    // 测试数据库连接 (临时禁用以调试问题)
-    logger.info('跳过数据库连接测试，直接启动服务器...');
-    // const isDbConnected = await poolService.testConnection();
-    // if (!isDbConnected) {
-    //   logger.error('数据库连接失败，服务器启动中止');
-    //   process.exit(1);
-    // }
-    // logger.info('数据库连接测试成功');
+    // 测试数据库连接（带重试机制）
+    logger.info('测试数据库连接...');
+    let isDbConnected = false;
+    const maxRetries = 10;
+    const retryDelay = 5000; // 5秒
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      logger.info(`数据库连接尝试 ${attempt}/${maxRetries}`);
+      
+      try {
+        isDbConnected = await poolService.testConnection();
+        if (isDbConnected) {
+          logger.info('数据库连接测试成功');
+          break;
+        }
+      } catch (error) {
+        logger.warn(`连接尝试 ${attempt} 失败`, {
+          error: error instanceof Error ? error.message : error
+        });
+      }
+      
+      if (attempt < maxRetries) {
+        logger.info(`等待 ${retryDelay/1000} 秒后重试...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    }
+    
+    if (!isDbConnected) {
+      logger.error('所有数据库连接尝试都失败，服务器启动中止');
+      process.exit(1);
+    }
 
     // 初始化连接池监控
     logger.info('初始化连接池监控...');
