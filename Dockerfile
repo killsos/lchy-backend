@@ -1,5 +1,5 @@
-# 使用阿里云Node.js 18 Alpine镜像作为基础镜像
-FROM registry.cn-hangzhou.aliyuncs.com/library/node:18-alpine AS base
+# 使用官方Node.js 18 Alpine镜像作为基础镜像
+FROM node:18-alpine AS base
 
 # 设置工作目录
 WORKDIR /app
@@ -22,7 +22,7 @@ RUN npm config set registry https://registry.npmmirror.com && \
     npm ci --only=production && npm cache clean --force
 
 # 开发构建阶段
-FROM registry.cn-hangzhou.aliyuncs.com/library/node:18-alpine AS builder
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -45,7 +45,7 @@ COPY src/ ./src/
 RUN npm run build
 
 # 生产运行阶段
-FROM registry.cn-hangzhou.aliyuncs.com/library/node:18-alpine AS production
+FROM node:18-alpine AS production
 
 # 设置阿里云镜像源
 RUN echo "https://mirrors.aliyun.com/alpine/v3.18/main/" > /etc/apk/repositories && \
