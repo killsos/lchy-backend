@@ -1,8 +1,12 @@
-# 使用官方Node.js 18 Alpine镜像作为基础镜像
-FROM node:18-alpine AS base
+# 使用阿里云Node.js 18 Alpine镜像作为基础镜像
+FROM registry.cn-hangzhou.aliyuncs.com/library/node:18-alpine AS base
 
 # 设置工作目录
 WORKDIR /app
+
+# 设置阿里云镜像源
+RUN echo "https://mirrors.aliyun.com/alpine/v3.18/main/" > /etc/apk/repositories && \
+    echo "https://mirrors.aliyun.com/alpine/v3.18/community/" >> /etc/apk/repositories
 
 # 安装系统依赖
 RUN apk add --no-cache \
@@ -13,20 +17,26 @@ RUN apk add --no-cache \
 # 复制package文件
 COPY package*.json ./
 
-# 安装依赖（仅生产依赖）
-RUN npm ci --only=production && npm cache clean --force
+# 设置npm阿里云镜像源并安装依赖
+RUN npm config set registry https://registry.npmmirror.com && \
+    npm ci --only=production && npm cache clean --force
 
 # 开发构建阶段
-FROM node:18-alpine AS builder
+FROM registry.cn-hangzhou.aliyuncs.com/library/node:18-alpine AS builder
 
 WORKDIR /app
+
+# 设置阿里云镜像源
+RUN echo "https://mirrors.aliyun.com/alpine/v3.18/main/" > /etc/apk/repositories && \
+    echo "https://mirrors.aliyun.com/alpine/v3.18/community/" >> /etc/apk/repositories
 
 # 复制package文件
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# 安装所有依赖（包括开发依赖）
-RUN npm ci
+# 设置npm阿里云镜像源并安装所有依赖（包括开发依赖）
+RUN npm config set registry https://registry.npmmirror.com && \
+    npm ci
 
 # 复制源代码和配置文件
 COPY src/ ./src/
@@ -35,7 +45,11 @@ COPY src/ ./src/
 RUN npm run build
 
 # 生产运行阶段
-FROM node:18-alpine AS production
+FROM registry.cn-hangzhou.aliyuncs.com/library/node:18-alpine AS production
+
+# 设置阿里云镜像源
+RUN echo "https://mirrors.aliyun.com/alpine/v3.18/main/" > /etc/apk/repositories && \
+    echo "https://mirrors.aliyun.com/alpine/v3.18/community/" >> /etc/apk/repositories
 
 # 创建非root用户
 RUN addgroup -g 1001 -S nodejs && \
