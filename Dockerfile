@@ -70,8 +70,9 @@ COPY --from=base --chown=appuser:nodejs /app/node_modules ./node_modules
 # 从builder阶段复制构建后的代码
 COPY --from=builder --chown=appuser:nodejs /app/dist ./dist
 
-# 复制其他必要文件（包括models、config和views）
+# 复制其他必要文件（包括models、config、views和sequelize配置）
 COPY --chown=appuser:nodejs package*.json ./
+COPY --chown=appuser:nodejs .sequelizerc ./
 COPY --from=builder --chown=appuser:nodejs /app/src/models ./dist/models
 COPY --from=builder --chown=appuser:nodejs /app/src/config ./dist/config
 COPY --from=builder --chown=appuser:nodejs /app/src/views ./src/views

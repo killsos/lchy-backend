@@ -2,8 +2,8 @@ import path from 'path';
 import { Sequelize, DataTypes } from 'sequelize';
 
 const env = process.env.NODE_ENV || 'development';
-import configObj from '../config/config';
-const config = configObj[env as keyof typeof configObj];
+const configObj = require('../config/config');
+const config = configObj[env];
 
 interface DB {
   [key: string]: any;
