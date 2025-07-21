@@ -30,7 +30,69 @@ const uploadMiddleware = multer({
 
 const router = Router();
 
+// 添加multer错误处理中间件
+const handleMulterError = (error: any, req: any, res: any, next: any) => {
+  console.error('=== Multer Error ===');
+  console.error('Error:', error);
+  
+  if (error instanceof multer.MulterError) {
+    console.error('Multer specific error:', error.code, error.message);
+    
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        error: '文件大小超过限制，最大支持5MB'
+      });
+    }
+    
+    if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({
+        success: false,
+        error: '意外的文件字段'
+      });
+    }
+  }
+  
+  if (error.message === '只允许上传CSV文件') {
+    return res.status(400).json({
+      success: false,
+      error: '只允许上传CSV文件'
+    });
+  }
+  
+  console.error('Unknown multer error:', error.message);
+  res.status(500).json({
+    success: false,
+    error: '文件上传失败',
+    details: error.message
+  });
+};
+
+// 请求调试中间件
+const debugRequest = (req: any, res: any, next: any) => {
+  console.log('=== Upload Request Debug ===');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+  console.log('Headers:', req.headers);
+  console.log('Content-Type:', req.headers['content-type']);
+  next();
+};
+
+// 简单测试端点
+router.post('/test', (req, res) => {
+  console.log('=== Test POST endpoint reached ===');
+  res.json({ success: true, message: 'POST route works' });
+});
+
 router.get('/', addCsv);
-router.post('/csv', uploadMiddleware.single('file'), upload);
+router.post('/csv', debugRequest, (req, res, next) => {
+  uploadMiddleware.single('file')(req, res, (err) => {
+    if (err) {
+      handleMulterError(err, req, res, next);
+    } else {
+      next();
+    }
+  });
+}, upload);
 
 export default router;

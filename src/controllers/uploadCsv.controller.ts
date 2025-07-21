@@ -26,13 +26,26 @@ export const addCsv = async (_req: Request, res: Response) => {
 
 export const upload = async (req: Request, res: Response) => {
     try {
+        console.log('=== CSV Upload Debug ===');
+        console.log('Request file:', req.file);
+        console.log('Request body:', req.body);
+        console.log('Request headers:', req.headers);
+        
         // 1. 验证文件是否存在
         if (!req.file) {
+            console.log('ERROR: No file uploaded');
             return res.status(400).json({ 
                 success: false,
                 error: '未上传文件' 
             });
         }
+        
+        console.log('File received:', {
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+            path: req.file.path
+        });
 
         // 2. 验证文件格式
         if (!CsvService.isValidCsvFile(req.file.originalname)) {
@@ -94,9 +107,15 @@ export const upload = async (req: Request, res: Response) => {
         }
 
     } catch (error) {
+        console.error('=== Upload Error ===');
+        console.error('Error:', error);
+        console.error('Error message:', error instanceof Error ? error.message : error);
+        console.error('Stack:', error instanceof Error ? error.stack : 'No stack');
+        
         logger.error('上传处理错误', { 
             error: error instanceof Error ? error.message : error,
-            fileName: req.file?.originalname 
+            fileName: req.file?.originalname,
+            stack: error instanceof Error ? error.stack : undefined
         });
         res.status(500).json({
             success: false,
