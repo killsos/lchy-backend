@@ -84,7 +84,7 @@ services:
       
     volumes:
       - ./logs:/app/logs
-      - ./uploads:/app/uploads
+      # - ./uploads:/app/uploads  # 让uploads完全在容器内，避免权限问题
     networks:
       - app-network
     depends_on:
