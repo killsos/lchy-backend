@@ -10,13 +10,14 @@ const PORT = process.env.PORT || 3200;
 
 // 导入数据库实例
 console.log('正在加载数据库模型...');
-const db = require('./models/index.js');
+import db from './models/index';
 console.log('数据库模型加载完成');
 
-// 临时跳过连接池服务，简化启动流程
-console.log('跳过连接池服务初始化，直接启动应用...');
-// const poolService = getConnectionPoolService(db.sequelize);
-// console.log('连接池服务初始化完成');
+// 初始化连接池服务
+console.log('正在初始化连接池服务...');
+const poolService = getConnectionPoolService(db.sequelize);
+poolService.initializePoolMonitoring();
+console.log('连接池服务初始化完成');
 
 // 确保必要的目录存在
 const createDirectories = () => {
@@ -40,10 +41,15 @@ const createDirectories = () => {
     logger.info('创建必要目录...');
     createDirectories();
     
-    // 简化数据库连接测试
+    // 测试数据库连接（带超时）
     logger.info('测试数据库连接...');
     try {
-      await db.sequelize.authenticate();
+      await Promise.race([
+        db.sequelize.authenticate(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('数据库连接超时')), 10000)
+        )
+      ]);
       logger.info('数据库连接测试成功');
     } catch (error) {
       logger.error('数据库连接失败', {

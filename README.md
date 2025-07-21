@@ -115,9 +115,8 @@ be/
 │   │   ├── health.controller.ts  # 健康检查
 │   │   └── uploadCsv.controller.ts # CSV上传处理
 │   ├── models/                   # 数据模型
-│   │   ├── index.js             # 模型初始化
-│   │   ├── approidata.js        # AppRoiData模型
-│   │   └── appRoiData.model.ts  # TypeScript模型定义
+│   │   ├── index.ts             # 模型初始化
+│   │   └── appRoiData.model.ts  # AppRoiData模型定义
 │   ├── routes/                   # 路由定义
 │   │   ├── api.routes.ts        # API路由
 │   │   ├── health.routes.ts     # 健康检查路由
@@ -132,8 +131,7 @@ be/
 │   ├── utils/                    # 工具函数
 │   │   └── logger.ts            # 日志工具
 │   ├── config/                   # 配置文件
-│   │   ├── config.js            # 数据库配置
-│   │   └── config.ts            # TypeScript配置
+│   │   └── config.ts            # 数据库配置
 │   ├── migrations/               # 数据库迁移
 │   └── views/                    # 视图文件
 ├── docker/                       # Docker配置

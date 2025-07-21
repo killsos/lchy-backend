@@ -3,7 +3,7 @@ import { getConnectionPoolService } from '../services/connectionPoolService';
 import logger from '../utils/logger';
 
 // 导入数据库实例
-const db = require('../models/index.js');
+import db from '../models/index';
 const poolService = getConnectionPoolService(db.sequelize);
 
 /**

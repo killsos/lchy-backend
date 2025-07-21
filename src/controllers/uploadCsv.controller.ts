@@ -5,7 +5,23 @@ import { AppRoiDataService } from '../services/appRoiDataService';
 import logger from '../utils/logger';
 
 export const addCsv = async (_req: Request, res: Response) => {
-    res.sendFile(path.resolve(__dirname, '../views/upload.html'));
+    try {
+        // 在生产环境中，views 目录在 src/views
+        const viewsPath = process.env.NODE_ENV === 'production' 
+            ? path.resolve(process.cwd(), 'src/views/upload.html')
+            : path.resolve(__dirname, '../views/upload.html');
+        
+        logger.info('尝试发送文件', { path: viewsPath, nodeEnv: process.env.NODE_ENV });
+        res.sendFile(viewsPath);
+    } catch (error) {
+        logger.error('发送upload页面失败', { 
+            error: error instanceof Error ? error.message : error 
+        });
+        res.status(500).json({
+            success: false,
+            error: '无法加载上传页面'
+        });
+    }
 };
 
 export const upload = async (req: Request, res: Response) => {

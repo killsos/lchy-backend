@@ -2,7 +2,7 @@
   "name": "app-roi-tracker",
   "version": "1.0.0",
   "description": "App ROI数据跟踪系统",
-  "main": "dist/index.js",
+  "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",

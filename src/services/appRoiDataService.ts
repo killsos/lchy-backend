@@ -1,9 +1,9 @@
 import logger from '../utils/logger';
 import { DataInsertResult, CsvRowData, ProcessedRowData, AppRoiData as AppRoiDataType } from '../types/appRoi.types';
-import { Sequelize } from 'sequelize';
+import { Sequelize, QueryTypes } from 'sequelize';
 
 // 使用 require 导入数据库模型
-const db = require('../models/index.js');
+import db from '../models/index';
 const AppRoiData = db.AppRoiData;
 
 export class AppRoiDataService {
@@ -167,7 +167,7 @@ export class AppRoiDataService {
             const result = await db.sequelize.query(
                 'SELECT DISTINCT app_name FROM AppRoiData ORDER BY app_name ASC',
                 { 
-                    type: db.sequelize.QueryTypes.SELECT,
+                    type: QueryTypes.SELECT,
                     raw: true 
                 }
             );
@@ -188,7 +188,7 @@ export class AppRoiDataService {
             const result = await db.sequelize.query(
                 'SELECT DISTINCT country FROM AppRoiData ORDER BY country ASC',
                 { 
-                    type: db.sequelize.QueryTypes.SELECT,
+                    type: QueryTypes.SELECT,
                     raw: true 
                 }
             );
@@ -209,7 +209,7 @@ export class AppRoiDataService {
             const result = await db.sequelize.query(
                 'SELECT DISTINCT bid_type FROM AppRoiData ORDER BY bid_type ASC',
                 { 
-                    type: db.sequelize.QueryTypes.SELECT,
+                    type: QueryTypes.SELECT,
                     raw: true 
                 }
             );
@@ -235,7 +235,7 @@ export class AppRoiDataService {
             const [appNamesResult] = await Promise.all([
                 db.sequelize.query(
                     'SELECT DISTINCT app_name FROM AppRoiData WHERE app_name IS NOT NULL ORDER BY app_name ASC',
-                    { type: db.sequelize.QueryTypes.SELECT }
+                    { type: QueryTypes.SELECT }
                 ),
             ]);
 
@@ -253,14 +253,14 @@ export class AppRoiDataService {
                     db.sequelize.query(
                         'SELECT DISTINCT country FROM AppRoiData WHERE app_name = ? AND country IS NOT NULL ORDER BY country ASC',
                         { 
-                            type: db.sequelize.QueryTypes.SELECT,
+                            type: QueryTypes.SELECT,
                             replacements: [selectedAppName]
                         }
                     ),
                     db.sequelize.query(
                         'SELECT DISTINCT bid_type FROM AppRoiData WHERE app_name = ? AND bid_type IS NOT NULL ORDER BY bid_type ASC',
                         { 
-                            type: db.sequelize.QueryTypes.SELECT,
+                            type: QueryTypes.SELECT,
                             replacements: [selectedAppName]
                         }
                     )
@@ -309,14 +309,14 @@ export class AppRoiDataService {
                 db.sequelize.query(
                     'SELECT DISTINCT country FROM AppRoiData WHERE app_name = ? AND country IS NOT NULL ORDER BY country ASC',
                     { 
-                        type: db.sequelize.QueryTypes.SELECT,
+                        type: QueryTypes.SELECT,
                         replacements: [appName]
                     }
                 ),
                 db.sequelize.query(
                     'SELECT DISTINCT bid_type FROM AppRoiData WHERE app_name = ? AND bid_type IS NOT NULL ORDER BY bid_type ASC',
                     { 
-                        type: db.sequelize.QueryTypes.SELECT,
+                        type: QueryTypes.SELECT,
                         replacements: [appName]
                     }
                 )
