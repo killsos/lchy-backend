@@ -19,7 +19,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # 配置
-COMPOSE_FILE="docker compose.prod.yml"
+COMPOSE_FILE="docker-compose.prod.yml"
 ENV_FILE=".env"
 BACKUP_DIR="./backups"
 PROJECT_NAME="app-roi-tracker"
