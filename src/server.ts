@@ -66,12 +66,12 @@ const startServer = async () => {
     // 启动服务器
     console.log('启动HTTP服务器...');
     logger.info('启动HTTP服务器...');
-    const server = app.listen(PORT, () => {
+    const server = app.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`服务器启动成功 - 端口: ${PORT}`);
       logger.info(`服务器启动成功`, {
         port: PORT,
         nodeEnv: process.env.NODE_ENV || 'development',
-        url: `http://localhost:${PORT}`
+        url: `http://0.0.0.0:${PORT}`
       });
     });
 
