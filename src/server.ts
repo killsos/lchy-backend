@@ -12,8 +12,11 @@ const PORT = process.env.PORT || 3200;
 console.log('正在加载数据库模型...');
 const db = require('./models/index.js');
 console.log('数据库模型加载完成');
-const poolService = getConnectionPoolService(db.sequelize);
-console.log('连接池服务初始化完成');
+
+// 临时跳过连接池服务，简化启动流程
+console.log('跳过连接池服务初始化，直接启动应用...');
+// const poolService = getConnectionPoolService(db.sequelize);
+// console.log('连接池服务初始化完成');
 
 // 确保必要的目录存在
 const createDirectories = () => {
@@ -37,41 +40,17 @@ const createDirectories = () => {
     logger.info('创建必要目录...');
     createDirectories();
     
-    // 测试数据库连接（带重试机制）
+    // 简化数据库连接测试
     logger.info('测试数据库连接...');
-    let isDbConnected = false;
-    const maxRetries = 10;
-    const retryDelay = 5000; // 5秒
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      logger.info(`数据库连接尝试 ${attempt}/${maxRetries}`);
-      
-      try {
-        isDbConnected = await poolService.testConnection();
-        if (isDbConnected) {
-          logger.info('数据库连接测试成功');
-          break;
-        }
-      } catch (error) {
-        logger.warn(`连接尝试 ${attempt} 失败`, {
-          error: error instanceof Error ? error.message : error
-        });
-      }
-      
-      if (attempt < maxRetries) {
-        logger.info(`等待 ${retryDelay/1000} 秒后重试...`);
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
-      }
-    }
-    
-    if (!isDbConnected) {
-      logger.error('所有数据库连接尝试都失败，服务器启动中止');
+    try {
+      await db.sequelize.authenticate();
+      logger.info('数据库连接测试成功');
+    } catch (error) {
+      logger.error('数据库连接失败', {
+        error: error instanceof Error ? error.message : error
+      });
       process.exit(1);
     }
-
-    // 初始化连接池监控
-    logger.info('初始化连接池监控...');
-    poolService.initializePoolMonitoring();
     
     // 启动服务器
     logger.info('启动HTTP服务器...');
@@ -79,8 +58,7 @@ const createDirectories = () => {
       logger.info(`服务器启动成功`, {
         port: PORT,
         nodeEnv: process.env.NODE_ENV || 'development',
-        url: `http://localhost:${PORT}`,
-        connectionPool: poolService.getPoolStats()
+        url: `http://localhost:${PORT}`
       });
     });
 
@@ -102,13 +80,11 @@ const createDirectories = () => {
 // 优雅关闭
 process.on('SIGTERM', async () => {
   logger.info('收到SIGTERM信号，准备关闭服务器');
-  await poolService.gracefulShutdown();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   logger.info('收到SIGINT信号，准备关闭服务器');
-  await poolService.gracefulShutdown();
   process.exit(0);
 });
 
