@@ -38,12 +38,23 @@ fs
       file.indexOf('.') !== 0 &&
       file !== basename &&
       file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1
+      file.indexOf('.test.js') === -1 &&
+      file !== 'appRoiData.model.ts' // 排除TypeScript模型文件
     );
   })
   .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-    db[model.name] = model;
+    try {
+      const modelModule = require(path.join(__dirname, file));
+      if (typeof modelModule === 'function') {
+        const model = modelModule(sequelize, Sequelize.DataTypes);
+        db[model.name] = model;
+        console.log(`Successfully loaded model: ${model.name} from ${file}`);
+      } else {
+        console.log(`Skipping ${file}: not a valid model function`);
+      }
+    } catch (error) {
+      console.error(`Error loading model from ${file}:`, error.message);
+    }
   });
 
 Object.keys(db).forEach(modelName => {
