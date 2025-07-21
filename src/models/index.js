@@ -31,32 +31,28 @@ sequelize.addHook('beforeDisconnect', (connection) => {
   });
 });
 
-fs
-  .readdirSync(__dirname)
-  .filter(file => {
-    return (
-      file.indexOf('.') !== 0 &&
-      file !== basename &&
-      file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1 &&
-      file !== 'appRoiData.model.ts' // 排除TypeScript模型文件
-    );
-  })
-  .forEach(file => {
-    try {
-      const modelModule = require(path.join(__dirname, file));
-      if (typeof modelModule === 'function') {
-        const model = modelModule(sequelize, Sequelize.DataTypes);
-        db[model.name] = model;
-        console.log(`Successfully loaded model: ${model.name} from ${file}`);
-      } else {
-        console.log(`Skipping ${file}: not a valid model function`);
-      }
-    } catch (error) {
-      console.error(`Error loading model from ${file}:`, error.message);
-    }
-  });
+console.log('开始加载模型...');
 
+// 明确指定要加载的模型文件，避免循环问题
+const modelFiles = ['approidata.js'];
+
+modelFiles.forEach(file => {
+  try {
+    console.log(`Loading model file: ${file}`);
+    const modelModule = require(path.join(__dirname, file));
+    if (typeof modelModule === 'function') {
+      const model = modelModule(sequelize, Sequelize.DataTypes);
+      db[model.name] = model;
+      console.log(`Successfully loaded model: ${model.name}`);
+    } else {
+      console.log(`Skipping ${file}: not a valid model function`);
+    }
+  } catch (error) {
+    console.error(`Error loading model from ${file}:`, error.message);
+  }
+});
+
+// 设置模型关联
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
     db[modelName].associate(db);
@@ -65,5 +61,7 @@ Object.keys(db).forEach(modelName => {
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
+
+console.log('模型加载完成，可用模型:', Object.keys(db));
 
 module.exports = db;
