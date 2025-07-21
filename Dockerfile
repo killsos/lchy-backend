@@ -1,55 +1,42 @@
-# 使用官方Node.js 18 Alpine镜像作为基础镜像
-FROM node:18-alpine AS base
+# 共享基础镜像配置
+FROM node:20-alpine AS alpine-base
 
-# 设置工作目录
-WORKDIR /app
-
-# 设置阿里云镜像源
+# 设置阿里云镜像源（所有阶段共享）
 RUN echo "https://mirrors.aliyun.com/alpine/v3.18/main/" > /etc/apk/repositories && \
     echo "https://mirrors.aliyun.com/alpine/v3.18/community/" >> /etc/apk/repositories
 
-# 安装系统依赖
-RUN apk add --no-cache \
-    dumb-init \
-    curl \
-    && rm -rf /var/cache/apk/*
+# 设置npm镜像源
+RUN npm config set registry https://registry.npmmirror.com
 
-# 复制package文件
+# 生产依赖安装阶段
+FROM alpine-base AS dependencies
+
+WORKDIR /app
+
+# 复制package文件并安装生产依赖
 COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
 
-# 设置npm阿里云镜像源并安装依赖
-RUN npm config set registry https://registry.npmmirror.com && \
-    npm ci --only=production && npm cache clean --force
-
-# 开发构建阶段
-FROM node:18-alpine AS builder
+# 构建阶段
+FROM alpine-base AS builder
 
 WORKDIR /app
 
-# 设置阿里云镜像源
-RUN echo "https://mirrors.aliyun.com/alpine/v3.18/main/" > /etc/apk/repositories && \
-    echo "https://mirrors.aliyun.com/alpine/v3.18/community/" >> /etc/apk/repositories
-
-# 复制package文件
+# 复制package文件和配置
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# 设置npm阿里云镜像源并安装所有依赖（包括开发依赖）
-RUN npm config set registry https://registry.npmmirror.com && \
-    npm ci
+# 安装所有依赖（包括开发依赖）
+RUN npm ci
 
-# 复制源代码和配置文件
+# 复制源代码
 COPY src/ ./src/
 
 # 构建TypeScript代码
 RUN npm run build
 
 # 生产运行阶段
-FROM node:18-alpine AS production
-
-# 设置阿里云镜像源
-RUN echo "https://mirrors.aliyun.com/alpine/v3.18/main/" > /etc/apk/repositories && \
-    echo "https://mirrors.aliyun.com/alpine/v3.18/community/" >> /etc/apk/repositories
+FROM alpine-base AS production
 
 # 创建非root用户
 RUN addgroup -g 1001 -S nodejs && \
@@ -64,17 +51,17 @@ RUN apk add --no-cache \
     curl \
     && rm -rf /var/cache/apk/*
 
-# 从base阶段复制node_modules
-COPY --from=base --chown=appuser:nodejs /app/node_modules ./node_modules
+# 复制生产依赖
+COPY --from=dependencies --chown=appuser:nodejs /app/node_modules ./node_modules
 
-# 从builder阶段复制构建后的代码
+# 复制构建后的代码
 COPY --from=builder --chown=appuser:nodejs /app/dist ./dist
 
-# 复制其他必要文件（包括models、config、views和sequelize配置）
+# 复制必要配置文件
 COPY --chown=appuser:nodejs package*.json ./
 COPY --chown=appuser:nodejs .sequelizerc ./
-COPY --from=builder --chown=appuser:nodejs /app/src/models ./dist/models
-COPY --from=builder --chown=appuser:nodejs /app/src/config ./dist/config
+
+# 复制源码文件（用于migrations和views）
 COPY --from=builder --chown=appuser:nodejs /app/src/views ./src/views
 COPY --from=builder --chown=appuser:nodejs /app/src/migrations ./src/migrations
 
