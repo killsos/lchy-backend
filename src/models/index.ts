@@ -20,20 +20,20 @@ if (config.use_env_variable) {
   sequelize = new Sequelize(config.database as string, config.username as string, config.password as string, config);
 }
 
-// 初始化连接池监控
-sequelize.addHook('afterConnect', (connection: any, config: any) => {
-  console.log('数据库连接已建立:', {
-    host: config.host,
-    database: config.database,
-    threadId: connection.threadId
-  });
-});
+// 初始化连接池监控（临时禁用）
+// sequelize.addHook('afterConnect', (connection: any, config: any) => {
+//   console.log('数据库连接已建立:', {
+//     host: config.host,
+//     database: config.database,
+//     threadId: connection.threadId
+//   });
+// });
 
-sequelize.addHook('beforeDisconnect', (connection: any) => {
-  console.log('数据库连接即将断开:', {
-    threadId: connection.threadId
-  });
-});
+// sequelize.addHook('beforeDisconnect', (connection: any) => {
+//   console.log('数据库连接即将断开:', {
+//     threadId: connection.threadId
+//   });
+// });
 
 console.log('开始加载模型...');
 

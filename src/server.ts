@@ -13,10 +13,10 @@ console.log('正在加载数据库模型...');
 import db from './models/index';
 console.log('数据库模型加载完成');
 
-// 初始化连接池服务
+// 初始化连接池服务（临时禁用监控）
 console.log('正在初始化连接池服务...');
 const poolService = getConnectionPoolService(db.sequelize);
-poolService.initializePoolMonitoring();
+// poolService.initializePoolMonitoring(); // 临时禁用
 console.log('连接池服务初始化完成');
 
 // 确保必要的目录存在
@@ -30,18 +30,21 @@ const createDirectories = () => {
   });
 };
 
-(async () => {
+const startServer = async () => {
   try {
+    console.log('开始启动服务器...');
     logger.info('开始启动服务器...', {
       port: PORT,
       nodeEnv: process.env.NODE_ENV || 'development'
     });
 
     // 创建必要目录
+    console.log('创建必要目录...');
     logger.info('创建必要目录...');
     createDirectories();
     
     // 测试数据库连接（带超时）
+    console.log('测试数据库连接...');
     logger.info('测试数据库连接...');
     try {
       await Promise.race([
@@ -50,8 +53,10 @@ const createDirectories = () => {
           setTimeout(() => reject(new Error('数据库连接超时')), 10000)
         )
       ]);
+      console.log('数据库连接测试成功');
       logger.info('数据库连接测试成功');
     } catch (error) {
+      console.error('数据库连接失败:', error);
       logger.error('数据库连接失败', {
         error: error instanceof Error ? error.message : error
       });
@@ -59,8 +64,10 @@ const createDirectories = () => {
     }
     
     // 启动服务器
+    console.log('启动HTTP服务器...');
     logger.info('启动HTTP服务器...');
     const server = app.listen(PORT, () => {
+      console.log(`服务器启动成功 - 端口: ${PORT}`);
       logger.info(`服务器启动成功`, {
         port: PORT,
         nodeEnv: process.env.NODE_ENV || 'development',
@@ -70,18 +77,22 @@ const createDirectories = () => {
 
     // 监听服务器错误
     server.on('error', (error: any) => {
+      console.error('HTTP服务器错误:', error.message);
       logger.error('HTTP服务器错误', { error: error.message });
       process.exit(1);
     });
     
   } catch (error) {
+    console.error('服务器启动失败:', error);
     logger.error('服务器启动失败', {
       error: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined
     });
     process.exit(1);
   }
-})();
+};
+
+startServer();
 
 // 优雅关闭
 process.on('SIGTERM', async () => {

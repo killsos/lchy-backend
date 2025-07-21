@@ -1,5 +1,5 @@
 # 共享基础镜像配置
-FROM node:20-alpine AS alpine-base
+FROM node:18-alpine AS alpine-base
 
 # 设置阿里云镜像源（所有阶段共享）
 RUN echo "https://mirrors.aliyun.com/alpine/v3.18/main/" > /etc/apk/repositories && \
